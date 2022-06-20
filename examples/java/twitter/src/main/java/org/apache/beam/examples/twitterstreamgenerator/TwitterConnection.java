@@ -17,21 +17,20 @@
  */
 package org.apache.beam.examples.twitterstreamgenerator;
 
+import com.twitter.clientlib.TwitterCredentialsBearer;
+import com.twitter.clientlib.model.StreamingTweetResponse;
+import com.twitter.clientlib.query.StreamQueryParameters;
+import com.twitter.clientlib.query.model.TweetField;
+import com.twitter.clientlib.stream.TweetsStreamListener;
+import com.twitter.clientlib.stream.TwitterStream;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import twitter4j.FilterQuery;
-import twitter4j.StallWarning;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.StatusListener;
-import twitter4j.TwitterStream;
-import twitter4j.TwitterStreamFactory;
-import twitter4j.conf.ConfigurationBuilder;
 
 /** Singleton class for twitter connection. * */
 class TwitterConnection {
-  private final BlockingQueue<Status> queue;
+  private final BlockingQueue<StreamingTweetResponse> queue;
   private final TwitterStream twitterStream;
   private static final Object lock = new Object();
   static final ConcurrentHashMap<TwitterConfig, TwitterConnection> INSTANCE_MAP =
@@ -44,48 +43,23 @@ class TwitterConnection {
    */
   TwitterConnection(TwitterConfig twitterConfig) {
     this.queue = new LinkedBlockingQueue<>();
-    ConfigurationBuilder cb = new ConfigurationBuilder();
-    cb.setDebugEnabled(true)
-        .setOAuthConsumerKey(twitterConfig.getKey())
-        .setOAuthConsumerSecret(twitterConfig.getSecret())
-        .setOAuthAccessToken(twitterConfig.getToken())
-        .setOAuthAccessTokenSecret(twitterConfig.getTokenSecret());
 
-    this.twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
-    StatusListener listener =
-        new StatusListener() {
-          @Override
-          public void onException(Exception e) {
-            e.printStackTrace();
-          }
-
-          @Override
-          public void onDeletionNotice(StatusDeletionNotice arg) {}
-
-          @Override
-          public void onScrubGeo(long userId, long upToStatusId) {}
-
-          @Override
-          public void onStallWarning(StallWarning warning) {}
-
-          @Override
-          public void onStatus(Status status) {
+    this.twitterStream = new TwitterStream(new TwitterCredentialsBearer(twitterConfig.getToken()));
+    TweetsStreamListener listener = new TweetsStreamListener() {
+        @Override
+        public void onTweetArrival(StreamingTweetResponse streamingTweet) {
             try {
-              queue.offer(status);
+                queue.offer(streamingTweet);
             } catch (Exception ignored) {
             }
-          }
-
-          @Override
-          public void onTrackLimitationNotice(int numberOfLimitedStatuses) {}
-        };
-    FilterQuery tweetFilterQuery = new FilterQuery();
-    for (String filter : twitterConfig.getFilters()) {
-      tweetFilterQuery.track(filter);
-    }
-    tweetFilterQuery.language(twitterConfig.getLanguage());
+        }
+    };
     this.twitterStream.addListener(listener);
-    this.twitterStream.filter(tweetFilterQuery);
+    StreamQueryParameters streamQueryParameters = new StreamQueryParameters.Builder()
+            .withTweetFields(TweetField.CREATED_AT)
+            .build();
+    this.twitterStream.startSampleStream(streamQueryParameters);
+
   }
 
   public static TwitterConnection getInstance(TwitterConfig twitterConfig) {
@@ -99,7 +73,7 @@ class TwitterConnection {
     }
   }
 
-  public BlockingQueue<Status> getQueue() {
+  public BlockingQueue<StreamingTweetResponse> getQueue() {
     return this.queue;
   }
 

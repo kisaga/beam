@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
+
+import com.twitter.clientlib.model.StreamingTweetResponse;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.range.OffsetRange;
@@ -36,7 +38,6 @@ import org.joda.time.Duration;
 import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.Status;
 
 /** Splittable dofn that read live data off twitter. * */
 @DoFn.UnboundedPerElement
@@ -177,21 +178,21 @@ final class ReadFromTwitterDoFn extends DoFn<TwitterConfig, String> {
       ManualWatermarkEstimator<Instant> watermarkEstimator) {
     LOG.debug("In Read From Twitter Do Fn");
     TwitterConnection twitterConnection = TwitterConnection.getInstance(twitterConfig);
-    BlockingQueue<Status> queue = twitterConnection.getQueue();
+    BlockingQueue<StreamingTweetResponse> queue = twitterConnection.getQueue();
     if (queue.isEmpty()) {
       if (checkIfDone(twitterConnection, twitterConfig, tracker)) {
         return DoFn.ProcessContinuation.stop();
       }
     }
     while (!queue.isEmpty()) {
-      Status status = queue.poll();
+      StreamingTweetResponse tweet = queue.poll();
       if (checkIfDone(twitterConnection, twitterConfig, tracker)) {
         return DoFn.ProcessContinuation.stop();
       }
-      if (status != null) {
-        Instant currentInstant = Instant.ofEpochMilli(status.getCreatedAt().getTime());
+      if (tweet != null) {
+        Instant currentInstant = Instant.ofEpochMilli(tweet.getData().getCreatedAt().toInstant().toEpochMilli());
         watermarkEstimator.setWatermark(currentInstant);
-        out.outputWithTimestamp(status.getText(), currentInstant);
+        out.outputWithTimestamp(tweet.getData().getText(), currentInstant);
       }
     }
     return DoFn.ProcessContinuation.resume().withResumeDelay(Duration.standardSeconds(1));

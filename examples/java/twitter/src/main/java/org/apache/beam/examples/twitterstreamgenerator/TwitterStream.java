@@ -87,11 +87,7 @@ public class TwitterStream {
                 TwitterIO.readStandardStream(
                     Arrays.asList(
                         new TwitterConfig.Builder()
-                            .setKey("")
-                            .setSecret("")
-                            .setToken("")
-                            .setTokenSecret("")
-                            .setFilters(Arrays.asList("", ""))
+                            .setToken("AAAAAAAAAAAAAAAAAAAAAJotdgEAAAAA35EUn%2Fq4zIHTBeoV5jco2i%2BbzTU%3D8iUiq9CQ9BGzvXBOfhPxkT066terrTKfcwcTbejcGby6t4MpqL")
                             .setLanguage("en")
                             .setTweetsCount(10L)
                             .setMinutesToRun(1)

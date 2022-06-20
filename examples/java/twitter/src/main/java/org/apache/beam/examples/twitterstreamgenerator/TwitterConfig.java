@@ -28,21 +28,13 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /** {@link Serializable} object to store twitter configurations for a connection. * */
 @DefaultCoder(SerializableCoder.class)
 public class TwitterConfig implements Serializable {
-  private final String key;
-  private final String secret;
   private final String token;
-  private final String tokenSecret;
-  private final List<String> filters;
   private final String language;
   private final Long tweetsCount;
   private final Integer minutesToRun;
 
   private TwitterConfig(TwitterConfig.Builder builder) {
-    this.key = builder.key;
-    this.secret = builder.secret;
     this.token = builder.token;
-    this.tokenSecret = builder.tokenSecret;
-    this.filters = builder.filters;
     this.language = builder.language;
     this.tweetsCount = builder.tweetsCount;
     this.minutesToRun = builder.minutesToRun;
@@ -57,11 +49,7 @@ public class TwitterConfig implements Serializable {
       return false;
     }
     TwitterConfig that = (TwitterConfig) o;
-    return Objects.equals(key, that.key)
-        && Objects.equals(secret, that.secret)
-        && Objects.equals(token, that.token)
-        && Objects.equals(tokenSecret, that.tokenSecret)
-        && Objects.equals(filters, that.filters)
+    return Objects.equals(token, that.token)
         && Objects.equals(language, that.language)
         && Objects.equals(tweetsCount, that.tweetsCount)
         && Objects.equals(minutesToRun, that.minutesToRun);
@@ -69,28 +57,11 @@ public class TwitterConfig implements Serializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        key, secret, token, tokenSecret, filters, language, tweetsCount, minutesToRun);
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public String getSecret() {
-    return secret;
+    return Objects.hash(token, language, tweetsCount, minutesToRun);
   }
 
   public String getToken() {
     return token;
-  }
-
-  public String getTokenSecret() {
-    return tokenSecret;
-  }
-
-  public List<String> getFilters() {
-    return filters;
   }
 
   public String getLanguage() {
@@ -106,37 +77,13 @@ public class TwitterConfig implements Serializable {
   }
 
   public static class Builder {
-    private String key = "";
-    private String secret = "";
     private String token = "";
-    private String tokenSecret = "";
-    private List<String> filters = new ArrayList<>();
     private String language = "en";
     private Long tweetsCount = Long.MAX_VALUE;
     private Integer minutesToRun = Integer.MAX_VALUE;
 
-    TwitterConfig.Builder setKey(final String key) {
-      this.key = key;
-      return this;
-    }
-
-    TwitterConfig.Builder setSecret(final String secret) {
-      this.secret = secret;
-      return this;
-    }
-
     TwitterConfig.Builder setToken(final String token) {
       this.token = token;
-      return this;
-    }
-
-    TwitterConfig.Builder setTokenSecret(final String tokenSecret) {
-      this.tokenSecret = tokenSecret;
-      return this;
-    }
-
-    TwitterConfig.Builder setFilters(final List<String> filters) {
-      this.filters = filters;
       return this;
     }
 
